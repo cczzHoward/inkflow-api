@@ -208,7 +208,10 @@ describe('AuthController', () => {
             );
         });
 
-        it('should return 401 if old password is invalid', async () => {
+        // 注意：舊密碼錯誤回 400 而非 401。使用者的 JWT 本身是有效的，
+        // 失敗的是 request body 的內容；且前端 axios interceptor 會在收到 401 時
+        // 清掉 localStorage 的 auth_token，若這裡回 401 會導致打錯一次舊密碼就被登出。
+        it('should return 400 if old password is invalid', async () => {
             // Arrange
             const mockReq = {
                 body: { oldPassword: 'wrongoldpass', newPassword: 'newpass' },
@@ -224,7 +227,7 @@ describe('AuthController', () => {
             await AuthController.changePassword(mockReq, mockRes);
 
             // Assert
-            expect(mockRes.status).toHaveBeenCalledWith(401);
+            expect(mockRes.status).toHaveBeenCalledWith(400);
             expect(mockRes.json).toHaveBeenCalledWith(
                 expect.objectContaining({
                     message: 'Invalid old password',

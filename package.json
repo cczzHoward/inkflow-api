@@ -1,16 +1,19 @@
 {
-    "name": "article-practice",
+    "name": "inkflow-api",
     "version": "1.0.0",
-    "description": "這是一個以部落格為主題的練習專案，主要目的是熟悉使用 `Controller -> Service -> Repository -> Model` 架構來開發 API。",
+    "description": "InkFlow 的後端 API — 部落格社群平台，採用 Controller → Service → Repository → Model 四層架構。",
     "main": "src/app.js",
     "scripts": {
         "app": "node src/server.js",
         "watch": "nodemon src/server.js",
         "seed": "node src/database/seeders/index.js",
-        "test": "jest --watchAll",
-        "test:integration": "jest selectProjects integration --detectOpenHandles",
-        "test:coverage": "jest --coverage --detectOpenHandles",
-        "format": "prettier --write ."
+        "test": "jest --selectProjects unit",
+        "test:integration": "jest --selectProjects integration --runInBand --detectOpenHandles --forceExit",
+        "test:coverage": "jest --selectProjects unit --coverage",
+        "format": "prettier --write .",
+        "test:watch": "jest --selectProjects unit --watchAll",
+        "test:unit": "jest --selectProjects unit",
+        "test:coverage:all": "node scripts/merge-coverage.js"
     },
     "author": "",
     "license": "ISC",
@@ -36,6 +39,12 @@
         "supertest": "^7.1.1"
     },
     "jest": {
+        "collectCoverageFrom": [
+            "src/**/*.js",
+            "!src/server.js",
+            "!src/database/seeders/**"
+        ],
+        "coverageDirectory": "coverage",
         "projects": [
             {
                 "displayName": "unit",
@@ -53,7 +62,9 @@
                 ],
                 "setupFilesAfterEnv": [
                     "<rootDir>/tests/setup.int.js"
-                ]
+                ],
+                "maxWorkers": 1,
+                "testTimeout": 30000
             }
         ]
     }

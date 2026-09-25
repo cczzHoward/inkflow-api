@@ -83,12 +83,19 @@ describe('ArticleRepository', () => {
     describe('findById', () => {
         it('should return an article by ID', async () => {
             // Arrange
-            const mockArticle = { title: 'Test Article' };
+            // chain: findById().populate().populate().populate().lean()
+            const mockDoc = {
+                _id: '123',
+                title: 'Test Article',
+                comments: [{ content: 'first' }, { content: 'second' }],
+                likedBy: ['user1', 'user2', 'user3'],
+            };
+            const leanMock = jest.fn().mockResolvedValue(mockDoc);
             const populateMock = jest.fn();
             populateMock
                 .mockReturnValueOnce({ populate: populateMock })
                 .mockReturnValueOnce({ populate: populateMock })
-                .mockReturnValueOnce(mockArticle);
+                .mockReturnValueOnce({ lean: leanMock });
 
             ArticleModel.findById.mockReturnValue({ populate: populateMock });
 
@@ -97,23 +104,38 @@ describe('ArticleRepository', () => {
 
             // Assert
             expect(ArticleModel.findById).toHaveBeenCalledWith('123');
-            expect(result).toEqual(mockArticle);
+            expect(populateMock).toHaveBeenCalledTimes(3);
+            expect(leanMock).toHaveBeenCalled();
+            expect(result).toEqual({
+                ...mockDoc,
+                comments_count: 2,
+                likes_count: 3,
+                id: '123',
+            });
         });
     });
 
     describe('searchAndPaginate', () => {
         it('should return paginated articles based on search criteria', async () => {
             // Arrange
-            const mockData = [{ title: 'Test Article' }];
+            const mockDocs = [
+                {
+                    _id: 'article1',
+                    title: 'Test Article',
+                    comments: ['comment1'],
+                    likedBy: ['user1', 'user2'],
+                },
+            ];
             const mockCount = 10;
 
-            // 建立 chainable mock
+            // 建立 chainable mock，最後以 lean() 收尾
             const chain = {
                 select: jest.fn().mockReturnThis(),
                 populate: jest.fn().mockReturnThis(),
                 skip: jest.fn().mockReturnThis(),
                 limit: jest.fn().mockReturnThis(),
-                sort: jest.fn().mockReturnValue(mockData),
+                sort: jest.fn().mockReturnThis(),
+                lean: jest.fn().mockResolvedValue(mockDocs),
             };
 
             // 讓 find 回傳 chain，然後你可以在最後直接 mock find 的回傳值
@@ -131,8 +153,17 @@ describe('ArticleRepository', () => {
             // Assert
             expect(ArticleModel.find).toHaveBeenCalled();
             expect(ArticleModel.countDocuments).toHaveBeenCalled();
+            expect(chain.lean).toHaveBeenCalled();
             expect(result).toEqual({
-                data: mockData,
+                data: [
+                    {
+                        ...mockDocs[0],
+                        comments: undefined, // payload 已移除 comments 陣列
+                        comments_count: 1,
+                        likes_count: 2,
+                        id: 'article1',
+                    },
+                ],
                 total: mockCount,
                 page: 1,
                 limit: 5,

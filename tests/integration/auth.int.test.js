@@ -152,7 +152,9 @@ describe('Auth API Integration Tests', () => {
                 .post('/api/v1/users/change-password')
                 .set('Authorization', `Bearer ${userToken}`)
                 .send(changePasswordData);
-            expect(response.statusCode).toBe(401);
+            // 400（而非 401）：token 有效，錯的是 body 內容。回 401 會讓前端
+            // interceptor 清掉 token，使用者打錯舊密碼就被登出。
+            expect(response.statusCode).toBe(400);
             expect(response.body.data).toBeNull();
             expect(response.body.message).toBe('Invalid old password');
             expect(response.body.success).toBe(false);
