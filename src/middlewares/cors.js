@@ -1,6 +1,10 @@
 const cors = require('cors');
 
-const allowedOrigins = ['https://czhoward.me', 'http://localhost:5173', 'http://127.0.0.1:5173'];
+const allowedOrigins = [
+    'https://cczzhoward.github.io', // GitHub Pages 上的 inkflow-web
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+];
 
 const corsMiddleware = cors({
     origin: function (origin, callback) {
